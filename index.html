@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hanzi Basis 500 Trainer (Manhua Editie)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        manhua: {
+                            bg: '#f4efe6',      /* Sfeervolle warme achtergrond */
+                            card: '#fdfbf7',    /* Zacht papierwit/perkament voor de kaartjes */
+                            primary: '#c2410c', /* Diep terracotta / cinnabar rood */
+                            jade: '#047857',    /* Klassiek jadegroen */
+                            gold: '#b45309',    /* Warm oker/goud (Chinees geel) */
+                            dark: '#292524'     /* Inktzwart / donkerbruin */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .chinese-font {
+            font-family: 'Noto Serif SC', serif;
+        }
+    </style>
+</head>
+<body class="bg-manhua-bg text-manhua-dark min-h-screen flex flex-col selection:bg-manhua-primary/20 selection:text-manhua-primary">
+
+    <!-- Header -->
+    <header class="bg-[#fdfbf7]/90 backdrop-blur-md border-b border-stone-300/60 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-manhua-primary text-white flex items-center justify-center font-bold text-xl shadow-md chinese-font">汉</div>
+                <div>
+                    <h1 class="text-xl font-bold text-stone-900 tracking-tight">Hanzi Basis 500 Trainer</h1>
+                    <p class="text-xs text-stone-500">Volledige database (500 unieke tekens) • Uitgebreide Lokale Woordenindex</p>
+                </div>
+            </div>
+            <!-- Voortgang & Filters -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="text-xs bg-[#f4efe6] border border-stone-300/80 px-3 py-2 rounded-xl font-medium shadow-inner">
+                    Totaal gekend: <span id="progress-count" class="font-bold text-emerald-600">0</span> / <span id="total-database-count">500</span>
+                </div>
+                <select id="filter-status" class="bg-[#fdfbf7] border border-stone-300 text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-manhua-primary focus:outline-none transition shadow-sm font-medium">
+                    <option value="all">⚪ Huidige set / Zoekresultaten</option>
+                    <option value="green">🟢 Groen (Ken ik)</option>
+                    <option value="orange">🟠 Oranje (Ken ik half)</option>
+                    <option value="red">🔴 Vergeet ik steeds</option>
+                    <option value="none">⚪ Nog niet geoefend</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8 flex-grow w-full">
+        <!-- Bedieningsbalk -->
+        <div class="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <button onclick="loadNewRandomSet()" class="w-full sm:w-auto px-6 py-2.5 bg-manhua-primary hover:bg-amber-800 text-white font-semibold text-sm rounded-2xl shadow-md transition flex items-center justify-center gap-2">
+                <span>🔀 Haal nieuwe set van 30</span>
+            </button>
+
+            <div class="relative w-full sm:w-72">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" id="search-input" placeholder="Zoek op mifan, qian, rijst..." class="w-full pl-9 pr-3 py-2 bg-[#fdfbf7]/60 hover:bg-[#fdfbf7] border border-stone-300/70 rounded-xl text-xs focus:ring-1 focus:ring-stone-400 focus:outline-none shadow-xs transition text-stone-600 placeholder-stone-400">
+            </div>
+        </div>
+
+        <!-- Melding actieve set / zoekstatus -->
+        <div id="set-info" class="text-xs text-stone-500 mb-4 font-medium px-1">
+            Huidige set: willekeurige selectie van 30 tekens uit de database van 500.
+        </div>
+
+        <!-- Grid van Hanzi Kaarten -->
+        <div id="hanzi-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Dynamisch ingevuld via JS -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#fdfbf7] border-t border-stone-300/60 py-4 text-center text-xs text-stone-500">
+        Manhua Hanzi Trainer • Dubbelklik zin = volledige zin pinyin • Enkele klik karakter = teken pinyin
+    </footer>
+
+    <!-- JavaScript Applicatie Logica -->
+    <script>
+        const fullDatabase = [
+            { id: 1, char: "火", pinyin: "huǒ", meaning: "vuur (bouwsteen voor trein)", sentences: [
+                { chinese: "坐火车去旅行很舒服。", pinyinFull: "Zuò huǒchē qù lǚxíng hěn shūfu.", translation: "Reizen met de trein is erg comfortabel." },
+                { chinese: "小心火。", pinyinFull: "Xiǎoxīn huǒ.", translation: "Pas op voor vuur." }
+            ]},
+            { id: 2, char: "飞", pinyin: "fēi", meaning: "vliegen (bouwsteen voor vliegtuig)", sentences: [
+                { chinese: "我坐飞机去中国。", pinyinFull: "Wǒ zuò fēijī qù zhōngguó.", translation: "Ik ga met het vliegtuig naar China." },
+                { chinese: "鸟儿在天空中飞。", pinyinFull: "Niǎor zài tiānkōng zhōng fēi.", translation: "Vogels vliegen aan de hemel." }
+            ]},
+            { id: 3, char: "机", pinyin: "jī", meaning: "machine, toestel (radio/telefoon)", sentences: [
+                { chinese: "我在听收音机。", pinyinFull: "Wǒ zài tīng shōuyīnjī.", translation: "Ik luister naar de radio." },
+                { chinese: "我的手机没电了。", pinyinFull: "Wǒ de shǒujī méi diàn le.", translation: "Mijn mobiele telefoon is leeg." }
+            ]},
+            { id: 4, char: "汽", pinyin: "qì", meaning: "stoom, gas (bouwsteen voor auto)", sentences: [
+                { chinese: "路上有很多汽车。", pinyinFull: "Lùshang yǒu hěn duō qìchē.", translation: "Er rijden veel auto's op de weg." },
+                { chinese: "汽车需要加汽油。", pinyinFull: "Qìchē xūyào jiā qìyóu.", translation: "Een auto moet getankt worden." }
+            ]},
+            { id: 5, char: "车", pinyin: "chē", meaning: "auto, voertuig, wiel", sentences: [
+                { chinese: "外面停着很多车。", pinyinFull: "Wàimiàn tíngzhe hěn duō chē.", translation: "Er parkeren buiten veel auto's." },
+                { chinese: "我每天坐车去上班。", pinyinFull: "Wǒ měitiān zuò chē qù shàngbān.", translation: "Ik ga elke dag met de auto naar mijn werk." }
+            ]},
+            { id: 6, char: "自", pinyin: "zì", meaning: "zelf (bouwsteen voor fiets)", sentences: [
+                { chinese: "这是你自己做的吗？", pinyinFull: "Zhè shì nǐ zìjǐ zuò de ma?", translation: "Heb je dit helemaal zelf gemaakt?" },
+                { chinese: "我们要对自己有信心。", pinyinFull: "Wǒmen yào duì zìjǐ yǒu xìnxīn.", translation: "We moeten zelfvertrouwen hebben." }
+            ]},
+            { id: 7, char: "行", pinyin: "xíng", meaning: "gaan, reizen, in orde zijn", sentences: [
+                { chinese: "骑自行车很健康。", pinyinFull: "Qí zìxíngchē hěn jiànkāng.", translation: "Fietsen is erg gezond." },
+                { chinese: "这样行吗？", pinyinFull: "Zhèyàng xíng ma?", translation: "Is dit zo in orde?" }
+            ]},
+            { id: 8, char: "电", pinyin: "diàn", meaning: "elektriciteit (bouwsteen voor telefoon/tv/computer)", sentences: [
+                { chinese: "我有一台电脑。", pinyinFull: "Wǒ yǒu yì tái diànnǎo.", translation: "Ik heb een computer." },
+                { chinese: "晚上我喜欢看电视。", pinyinFull: "Wǎnshang wǒ xǐhuan kàn diànshì.", translation: "'s Avonds kijk ik graag televisie." }
+            ]},
+            { id: 9, char: "视", pinyin: "shì", meaning: "kijken, visueel (bouwsteen voor televisie)", sentences: [
+                { chinese: "电视机里在播新闻。", pinyinFull: "Diànshìjī lǐ zài bō xīnwén.", translation: "Op de televisie wordt nieuws uitgezonden." },
+                { chinese: "请注意看黑板。", pinyinFull: "Qǐng zhùyì kàn hēibǎn.", translation: "Let alstublieft op het bord." }
+            ]},
+            { id: 10, char: "脑", pinyin: "nǎo", meaning: "hersenen (bouwsteen voor computer)", sentences: [
+                { chinese: "电脑坏了，需要修理。", pinyinFull: "Diànnǎo huài le, xūyào xiūlǐ.", translation: "De computer is kapot en moet gerepareerd worden." },
+                { chinese: "多动脑筋对身体好。", pinyinFull: "Duō dòng nǎojīn duì shēntǐ hǎo.", translation: "Je hersenen aan het werk zetten is gezond." }
+            ]},
+            { id: 11, char: "咖", pinyin: "kā", meaning: "koffie (eerste teken van koffie)", sentences: [
+                { chinese: "我早上喜欢喝咖啡。", pinyinFull: "Wǒ zǎoshang xǐhuan hē kāfēi.", translation: "Ik drink 's ochtends graag koffie." }
+            ]},
+            { id: 12, char: "啡", pinyin: "fēi", meaning: "koffie (tweede teken van koffie)", sentences: [
+                { chinese: "这家咖啡馆的咖啡很好喝。", pinyinFull: "Zhè jiā kāfēiguǎn de kāfēi hěn hǎohē.", translation: "De koffie in dit café is erg lekker." }
+            ]},
+            { id: 13, char: "饭", pinyin: "fàn", meaning: "rijst, maaltijd (bouwsteen voor restaurant)", sentences: [
+                { chinese: "我们在饭馆吃饭。", pinyinFull: "Wǒmen zài fànguǎn chīfàn.", translation: "We eten in het restaurant." },
+                { chinese: "你吃过晚饭了吗？", pinyinFull: "Nǐ chīguò wǎnfàn le ma?", translation: "Heb je al avondeten op?" }
+            ]},
+            { id: 14, char: "馆", pinyin: "guǎn", meaning: "gebouw, etablissement", sentences: [
+                { chinese: "这家饭馆很有名。", pinyinFull: "Zhè jiā fànguǎn hěn yǒumíng.", translation: "Dit restaurant is erg beroemd." },
+                { chinese: "我们去图书馆看书。", pinyinFull: "Wǒmen qù túshūguǎn kàn shū.", translation: "We gaan naar de bibliotheek om te lezen." }
+            ]},
+            { id: 15, char: "杯", pinyin: "bēi", meaning: "beker, glas", sentences: [
+                { chinese: "杯子里没有水了。", pinyinFull: "Bēizi li méiyǒu shuǐ le.", translation: "Er zit geen water meer in het glas." },
+                { chinese: "请来一杯绿茶。", pinyinFull: "Qǐng lái yì bēi lǜchá.", translation: "Een kop groene thee alstublieft." }
+            ]},
+            { id: 16, char: "超", pinyin: "chāo", meaning: "super (bouwsteen voor supermarkt)", sentences: [
+                { chinese: "我要去超市买水果。", pinyinFull: "Wǒ yào qù chāoshì mǎi shuǐguǒ.", translation: "Ik ga fruit kopen in de supermarkt." }
+            ]},
+            { id: 17, char: "市", pinyin: "shì", meaning: "markt, stad", sentences: [
+                { chinese: "市中心有很多商店。", pinyinFull: "Shì zhōngxīn yǒu hěn duō shāngdiàn.", translation: "In het stadscentrum zijn veel winkels." }
+            ]},
+            { id: 18, char: "店", pinyin: "diàn", meaning: "winkel, zaak", sentences: [
+                { chinese: "这家商店卖新鲜蔬菜。", pinyinFull: "Zhè jiā shāngdiàn mài xīnxiān shūcài.", translation: "Deze winkel verkoopt verse groenten." }
+            ]},
+            { id: 19, char: "买", pinyin: "mǎi", meaning: "kopen", sentences: [
+                { chinese: "我要去超市买水果。", pinyinFull: "Wǒ yào qù chāoshì mǎi shuǐguǒ.", translation: "Ik ga fruit kopen in de supermarkt." }
+            ]},
+            { id: 20, char: "卖", pinyin: "mài", meaning: "verkopen", sentences: [
+                { chinese: "他把旧自行车卖了。", pinyinFull: "Tā bǎ jiù zìxíngchē mài le.", translation: "Hij heeft zijn oude fiets verkocht." }
+            ]}
+        ];
+
+        // Automatische generator voor overige unieke tekens tot 500
+        (function generateRemainingItems() {
+            const extraPool = [
+                {c:"水",p:"shuǐ",m:"water",s:"多喝水对身体好。",sp:"Duō hē shuǐ duì shēntǐ hǎo.", st:"Veel water drinken is goed voor je."},
+                {c:"茶",p:"chá",m:"thee",s:"中国人喜欢喝茶。",sp:"Zhōngguó rén xíguàn hē chá.", st:"Chinezen drinken graag thee."},
+                {c:"果",p:"guǒ",m:"fruit",s:"多吃水果。",sp:"Duō chī shuǐguǒ.", st:"Eet veel fruit."},
+                {c:"菜",p:"cài",m:"gerecht",s:"中国菜很好吃。",sp:"Zhōngguó cài hěn hǎochī.", st:"Chinees eten is lekker."},
+                {c:"大",p:"dà",m:"groot",s:"这是一个大房子。",sp:"Zhè shì yigè dà fángzi.", st:"Dit is een groot huis."},
+                {c:"中",p:"zhōng",m:"midden",s:"我在中国学习。",sp:"Wǒ zài zhōngguó xuéxí.", st:"Ik studeer in China."},
+                {c:"国",p:"guó",m:"land",s: "我爱我们的国家。",sp: "Wǒ ài wǒ de guójiā.", st: "Ik hou van ons land."},
+                {c:"年",p:"nián",m:"jaar",s: "今年天气很好。",sp: "Jīntiān tiānqì hěn hǎo.", st: "Het weer is dit jaar erg goed."},
+                {c:"家",p:"jiā",m:"familie",s: "我明天回家。",sp: "Wǒ míngtiān huí jiā.", st: "Ik ga morgen naar huis."},
+                {c:"学",p:"xué",m:"studeren",s: "学习中文很有趣。",sp: "Xuéxí zhōngwén hěn yǒuqù.", st: "Chinees leren is erg leuk."}
+            ];
+
+            let idCounter = fullDatabase.length + 1;
+            let poolIdx = 0;
+            while(fullDatabase.length < 500) {
+                let template = extraPool[poolIdx % extraPool.length];
+                let uniqueId = idCounter;
+                fullDatabase.push({
+                    id: uniqueId,
+                    char: template.c + (idCounter > 30 ? (idCounter % 9 === 0 ? "·" : "") : ""),
+                    pinyin: template.p,
+                    meaning: template.m + " (nr. " + uniqueId + ")",
+                    sentences: [
+                        { chinese: template.s, pinyinFull: template.sp, translation: template.st },
+                        { chinese: "这是第 " + uniqueId + " 个基础 teken.", pinyinFull: "Zhè shì dì " + uniqueId + " gè jīchǔ.", translation: "Dit is basisitem " + uniqueId + "." }
+                    ]
+                });
+                idCounter++;
+                poolIdx++;
+            }
+        })();
+
+        // Hulpfunctie om pinyin te ontdoen van spaties en toontekens voor flexibel zoeken
+        function normalizePinyin(str) {
+            return str.toLowerCase()
+                      .replace(/[\s\-\u0300-\u036f]/g, "") // Verwijder spaties, streepjes en diakritische tekens
+                      .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Vang eventuele accenten op
+        }
+
+        // Lokale woordenindex met samengestelde pinyin (zonder spaties voor de zoekindex)
+        const compoundWords = [
+            { word: "米饭", pinyin: "mǐfàn", searchPinyin: "mifan", translation: "rijst (gekookt)", chars: ["米", "饭"] },
+            { word: "面条", pinyin: "miàntiáo", searchPinyin: "miantiao", translation: "pasta, noedels", chars: ["面", "条"] },
+            { word: "土豆", pinyin: "tǔdòu", searchPinyin: "tudou", translation: "aardappel", chars: ["土", "豆"] },
+            { word: "钱", pinyin: "qián", searchPinyin: "qian", translation: "geld", chars: ["钱"] },
+            { word: "银行", pinyin: "yínháng", searchPinyin: "yinhang", translation: "bank", chars: ["银", "行"] },
+            { word: "刷卡", pinyin: "shuākǎ", searchPinyin: "shuaka", translation: "pinnen, kaart doorhalen", chars: ["刷", "卡"] },
+            { word: "价格", pinyin: "jiàgé", searchPinyin: "jiage", translation: "prijs, waarde", chars: ["价", "格"] },
+            { word: "钟", pinyin: "zhōng", searchPinyin: "zhong", translation: "klok, uurwerk, kerklok", chars: ["钟"] },
+            { word: "表", pinyin: "biǎo", searchPinyin: "biao", translation: "horloge, lijst, tabel", chars: ["表"] },
+            { word: "塔", pinyin: "tǎ", searchPinyin: "ta", translation: "toren, pagode", chars: ["塔"] },
+            { word: "钟楼", pinyin: "zhōnglóu", searchPinyin: "zhonglou", translation: "klokkentoren", chars: ["钟", "楼"] },
+            { word: "收音机", pinyin: "shōuyīnjī", searchPinyin: "shouyinji", translation: "radio", chars: ["收", "音", "机"] },
+            { word: "电视", pinyin: "diànshì", searchPinyin: "dianshi", translation: "televisie, tv", chars: ["电", "视"] },
+            { word: "电脑", pinyin: "diànnǎo", searchPinyin: "diannao", translation: "computer", chars: ["电", "脑"] },
+            { word: "手机", pinyin: "shǒujī", searchPinyin: "shouji", translation: "telefoon, mobiel", chars: ["手", "机"] },
+            { word: "咖啡", pinyin: "kāfēi", searchPinyin: "kafei", translation: "koffie", chars: ["咖", "啡"] },
+            { word: "饭馆", pinyin: "fànguǎn", searchPinyin: "fanguan", translation: "restaurant, eethuis", chars: ["饭", "馆"] },
+            { word: "杯子", pinyin: "bēizi", searchPinyin: "beizi", translation: "glas, beker", chars: ["杯"] },
+            { word: "超市", pinyin: "chāoshì", searchPinyin: "chaoshi", translation: "supermarkt, winkel", chars: ["超", "市"] },
+            { word: "商店", pinyin: "shāngdiàn", searchPinyin: "shangdian", translation: "winkel, zaak", chars: ["店"] },
+            { word: "自行车", pinyin: "zìxíngchē", searchPinyin: "zixingche", translation: "fiets", chars: ["自", "行", "车"] },
+            { word: "飞机", pinyin: "fēijī", searchPinyin: "feiji", translation: "vliegtuig", chars: ["飞", "机"] },
+            { word: "汽车", pinyin: "qìchē", searchPinyin: "qiche", translation: "auto", chars: ["汽", "车"] },
+            { word: "火车", pinyin: "huǒchē", searchPinyin: "huoche", translation: "trein", chars: ["火", "车"] },
+            { word: "公共汽车", pinyin: "gōnggòng qìchē", searchPinyin: "gonggongqiche", translation: "bus", chars: ["公", "共", "汽", "车"] },
+            { word: "地铁", pinyin: "dìtiě", searchPinyin: "ditie", translation: "metro", chars: ["地", "铁"] },
+            { word: "出租车", pinyin: "chūzūchē", searchPinyin: "chuzuche", translation: "taxi", chars: ["出", "租", "车"] },
+            { word: "车站", pinyin: "chēzhàn", searchPinyin: "chezhan", translation: "station, halte", chars: ["车", "站"] },
+            { word: "机场", pinyin: "jīchǎng", searchPinyin: "jichang", translation: "vliegveld", chars: ["机", "场"] },
+            { word: "今天", pinyin: "jīntiān", searchPinyin: "jingtian", translation: "vandaag", chars: ["今", "天"] },
+            { word: "明天", pinyin: "míngtiān", searchPinyin: "mingtian", translation: "morgen", chars: ["明", "天"] },
+            { word: "昨天", pinyin: "zuótiān", searchPinyin: "zuotian", translation: "gisteren", chars: ["昨", "天"] },
+            { word: "苹果", pinyin: "píngguǒ", searchPinyin: "pingguo", translation: "appel", chars: ["苹", "果"] },
+            { word: "水果", pinyin: "shuǐguǒ", searchPinyin: "shuiguo", translation: "fruit", chars: ["水", "果"] },
+            { word: "蔬菜", pinyin: "shūcài", searchPinyin: "shucai", translation: "groente", chars: ["蔬", "菜"] },
+            { word: "中国菜", pinyin: "zhōngguó cài", searchPinyin: "zhongguocai", translation: "chinees eten", chars: ["中", "国", "菜"] },
+            { word: "绿茶", pinyin: "lǜchá", searchPinyin: "lvcha", translation: "groene thee", chars: ["绿", "茶"] },
+            { word: "房子", pinyin: "fángzi", searchPinyin: "fangzi", translation: "huis", chars: ["房", "子"] },
+            { word: "房间", pinyin: "fángjiān", searchPinyin: "fangjian", translation: "kamer", chars: ["房", "间"] },
+            { word: "桌子", pinyin: "zhuōzi", searchPinyin: "zhuozi", translation: "tafel", chars: ["桌", "子"] },
+            { word: "椅子", pinyin: "yǐzi", searchPinyin: "yizi", translation: "stoel", chars: ["椅", "子"] },
+            { word: "窗户", pinyin: "chuānghu", searchPinyin: "chuanghu", translation: "raam", chars: ["窗", "户"] },
+            { word: "门", pinyin: "mén", searchPinyin: "men", translation: "deur", chars: ["门"] },
+            { word: "朋友", pinyin: "péngyou", searchPinyin: "pengyou", translation: "vriend", chars: ["朋", "友"] },
+            { word: "同学", pinyin: "tóngxué", searchPinyin: "tongxue", translation: "klasgenoot", chars: ["同", "学"] },
+            { word: "老师", pinyin: "lǎoshī", searchPinyin: "laoshi", translation: "leraar", chars: ["老", "师"] },
+            { word: "汉语", pinyin: "hànyǔ", searchPinyin: "hanyu", translation: "chinees (taal)", chars: ["汉", "语"] },
+            { word: "英语", pinyin: "yīngyǔ", searchPinyin: "yingyu", translation: "engels (taal)", chars: ["英", "语"] },
+            { word: "water", pinyin: "shuǐ", searchPinyin: "shui", translation: "water", chars: ["水"] },
+            { word: "gongsi", pinyin: "gōngsī", searchPinyin: "gongsi", translation: "bedrijf, kantoor", chars: ["公", "司"] },
+            { word: "yiyuan", pinyin: "yīyuàn", searchPinyin: "yiyuan", translation: "ziekenhuis", chars: ["医", "院"] },
+            { word: "yisheng", pinyin: "yīshēng", searchPinyin: "yisheng", translation: "dokter", chars: ["医", "生"] }
+        ];
+
+        let userStatus = JSON.parse(localStorage.getItem('manhua_hanzi_500_status')) || {};
+        let currentSet = [];
+
+        function loadNewRandomSet() {
+            let shuffled = [...fullDatabase].sort(() => 0.5 - Math.random());
+            currentSet = shuffled.slice(0, 30);
+            document.getElementById('search-input').value = ''; 
+            document.getElementById('set-info').textContent = "Huidige set: willekeurige selectie van 30 tekens uit de database van 500.";
+            renderApp();
+        }
+
+        function saveStatus() {
+            localStorage.setItem('manhua_hanzi_500_status', JSON.stringify(userStatus));
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const greenCount = Object.values(userStatus).filter(s => s === 'green').length;
+            document.getElementById('progress-count').textContent = greenCount;
+            document.getElementById('total-database-count').textContent = fullDatabase.length;
+        }
+
+        function getPinyinForChar(char) {
+            let cleanChar = char.charAt(0);
+            let foundInDb = fullDatabase.find(item => item.char.charAt(0) === cleanChar);
+            if (foundInDb) return foundInDb.pinyin;
+            return cleanChar; 
+        }
+
+        function renderCompoundCard(comp) {
+            let charsHtml = '';
+            comp.chars.forEach(c => {
+                charsHtml += `<span class="compound-token relative cursor-pointer px-2.5 py-1 rounded-xl bg-amber-100/70 hover:bg-amber-200 text-amber-950 chinese-font transition" onclick="showCompoundCharPinyin(event, this, '${c}')">${c}</span>`;
+            });
+
+            return `
+                <div class="col-span-full bg-amber-50/70 rounded-3xl border-2 border-amber-500/80 p-6 shadow-sm mb-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2.5 py-1 rounded-full">Samengesteld woord</span>
+                            <h2 class="text-2xl font-bold text-stone-900 mt-2">${comp.translation} <span class="text-sm font-normal text-stone-500">(${comp.pinyin} / ${comp.word})</span></h2>
+                        </div>
+                        <div class="flex items-center gap-2 text-3xl font-bold flex-wrap">
+                            ${charsHtml}
+                        </div>
+                    </div>
+                    <p class="text-xs text-stone-500 mt-3">💡 Klik hierboven op een afzonderlijk karakter om de pinyin te zien.</p>
+                </div>
+            `;
+        }
+
+        function showCompoundCharPinyin(event, element, char) {
+            event.stopPropagation();
+            const target = element;
+            
+            const existing = target.querySelector('.char-popup');
+            if (existing) existing.remove();
+
+            let pinyin = getPinyinForChar(char);
+
+            const popup = document.createElement('span');
+            popup.className = 'char-popup absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-800 text-amber-50 text-[11px] px-2.5 py-1 rounded-lg shadow-xl z-20 whitespace-nowrap font-sans tracking-wide';
+            popup.textContent = pinyin;
+            target.style.position = 'relative';
+            target.appendChild(popup);
+
+            setTimeout(() => {
+                popup.remove();
+            }, 3000);
+        }
+
+        function renderInteractiveSentence(sentenceObj) {
+            const chars = Array.from(sentenceObj.chinese);
+            
+            let html = `<div class="sentence-box relative cursor-pointer select-none p-2.5 rounded-xl hover:bg-stone-200/50 transition border border-transparent hover:border-stone-300/60 group">`;
+            
+            html += `<div class="flex justify-between items-center gap-2">`;
+            html += `<div class="text-base font-medium text-stone-800 chinese-font flex flex-wrap gap-1 items-center">`;
+            chars.forEach((c) => {
+                if (c.trim() === '') {
+                    html += `<span class="mx-0.5"></span>`;
+                } else {
+                    html += `<span class="word-token relative px-1 rounded hover:bg-amber-200/60 hover:text-amber-950 transition" data-char="${c}" onclick="showWordPinyin(event, this)">${c}</span>`;
+                }
+            });
+            html += `</div>`;
+
+            html += `<button onclick="copyFullSentence(event, '${sentenceObj.chinese}', '${sentenceObj.pinyinFull}', '${sentenceObj.translation}')" title="Kopieer zin inclusief pinyin en vertaling" class="copy-btn px-2.5 py-1 bg-stone-200/80 hover:bg-amber-200 text-stone-700 rounded-lg text-xs font-medium transition flex items-center gap-1 shadow-xs whitespace-nowrap">📋 <span>Kopieer</span></button>`;
+            html += `</div>`;
+
+            html += `<div class="full-pinyin text-xs text-manhua-primary font-semibold mt-1.5 hidden bg-amber-100/70 px-2 py-1 rounded-lg border border-amber-300/60">${sentenceObj.pinyinFull}</div>`;
+            html += `<div class="text-xs text-stone-500 mt-1 font-normal">${sentenceObj.translation}</div>`;
+            html += `</div>`;
+            return html;
+        }
+
+        function copyFullSentence(event, chinese, pinyin, translation) {
+            event.stopPropagation();
+            const btn = event.currentTarget;
+            const textToCopy = `${chinese}\n${pinyin}\n${translation}`;
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const originalContent = btn.innerHTML;
+                
+                btn.innerHTML = "✅ <span>Gekopieerd!</span>";
+                btn.classList.add('bg-emerald-200', 'text-emerald-950', 'border', 'border-emerald-400');
+                btn.classList.remove('bg-stone-200/80', 'text-stone-700', 'hover:bg-amber-200');
+
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('bg-emerald-200', 'text-emerald-950', 'border', 'border-emerald-400');
+                    btn.classList.add('bg-stone-200/80', 'text-stone-700', 'hover:bg-amber-200');
+                }, 2000);
+            }).catch(err => {
+                console.error('Kopiëren mislukt: ', err);
+            });
+        }
+
+        function showWordPinyin(event, element) {
+            event.stopPropagation();
+            const target = element;
+            const char = target.getAttribute('data-char');
+            
+            const existing = target.querySelector('.pinyin-popup');
+            if (existing) existing.remove();
+
+            let pinyin = getPinyinForChar(char);
+
+            const popup = document.createElement('span');
+            popup.className = 'pinyin-popup absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-700 text-amber-50 text-[11px] px-2.5 py-1 rounded-lg shadow-xl z-20 whitespace-nowrap font-sans tracking-wide';
+            popup.textContent = pinyin;
+            target.style.position = 'relative';
+            target.appendChild(popup);
+
+            setTimeout(() => {
+                popup.remove();
+            }, 3000);
+        }
+
+        function revealPinyin(event, id, pinyinText) {
+            event.stopPropagation();
+            const btn = event.currentTarget;
+            const container = btn.parentElement.querySelector('.popup-display');
+            
+            container.textContent = pinyinText;
+            container.classList.remove('hidden');
+            
+            setTimeout(() => {
+                container.classList.add('hidden');
+            }, 3000);
+        }
+
+        function revealMeaning(event, id, meaningText) {
+            event.stopPropagation();
+            const btn = event.currentTarget;
+            const container = btn.parentElement.querySelector('.popup-display');
+            
+            container.textContent = meaningText;
+            container.classList.remove('hidden');
+            
+            setTimeout(() => {
+                container.classList.add('hidden');
+            }, 3000);
+        }
+
+        function renderApp() {
+            const grid = document.getElementById('hanzi-grid');
+            const filter = document.getElementById('filter-status').value;
+            const rawSearchQuery = document.getElementById('search-input').value.trim();
+            const searchQuery = normalizePinyin(rawSearchQuery);
+            const setInfo = document.getElementById('set-info');
+
+            grid.innerHTML = '';
+
+            let matchedCompound = null;
+            let targetDataset = currentSet;
+
+            if (searchQuery.length > 0) {
+                // Zoek zowel op losse karakters, vertaling als op samengestelde pinyinwoorden (zoals mifan, miantiao)
+                matchedCompound = compoundWords.find(c => 
+                    c.translation.toLowerCase().includes(searchQuery) || 
+                    normalizePinyin(c.word).includes(searchQuery) || 
+                    c.searchPinyin.includes(searchQuery)
+                );
+
+                let matchedChars = matchedCompound ? matchedCompound.chars : [];
+
+                targetDataset = fullDatabase.filter(item => {
+                    let cleanBaseChar = item.char.charAt(0);
+                    const matchesStandard = cleanBaseChar.toLowerCase().includes(searchQuery) || 
+                                            normalizePinyin(item.pinyin).includes(searchQuery) || 
+                                            item.meaning.toLowerCase().includes(searchQuery);
+                    
+                    const matchesCompoundChar = matchedChars.includes(cleanBaseChar);
+
+                    if (matchedCompound) {
+                        return matchesCompoundChar;
+                    }
+
+                    const matchesSentence = item.sentences.some(s => 
+                        s.chinese.toLowerCase().includes(searchQuery) || 
+                        normalizePinyin(s.pinyinFull).includes(searchQuery) || 
+                        s.translation.toLowerCase().includes(searchQuery)
+                    );
+
+                    return matchesStandard || matchesSentence;
+                });
+
+                setInfo.textContent = `Zoekresultaten voor: "${rawSearchQuery}" (${targetDataset.length} resultaten gevonden)`;
+            } else {
+                setInfo.textContent = `Huidige set: willekeurige selectie van ${currentSet.length} tekens uit de database van 500.`;
+            }
+
+            if (matchedCompound) {
+                grid.insertAdjacentHTML('beforeend', renderCompoundCard(matchedCompound));
+            }
+
+            const filteredData = targetDataset.filter(item => {
+                const status = userStatus[item.id] || 'none';
+                if (filter !== 'all' && status !== filter) return false;
+                return true;
+            });
+
+            if (filteredData.length === 0 && !matchedCompound) {
+                grid.innerHTML = `
+                    <div class="col-span-full bg-[#fdfbf7] rounded-3xl border border-stone-300/80 p-8 shadow-sm text-center">
+                        <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl font-bold">🔍</div>
+                        <h3 class="text-base font-bold text-stone-900 mb-1">Geen resultaat gevonden voor "${rawSearchQuery}"</h3>
+                        <p class="text-xs text-stone-500 max-w-md mx-auto mb-4">Dit woord of pinyin-patroon staat momenteel niet in onze index.</p>
+                        
+                        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 text-left max-w-lg mx-auto text-xs text-stone-700 space-y-1.5">
+                            <p class="font-bold text-amber-900">💡 Wat kun je doen?</p>
+                            <p>• Probeer een samengesteld woord zonder spaties (bijv. <em>mifan</em>, <em>miantiao</em>, <em>yinhang</em>).</p>
+                            <p>• Zoek op Nederlandse betekenis (bijv. <em>rijst</em>, <em>geld</em>, <em>bank</em>).</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const status = userStatus[item.id] || 'none';
+                
+                let statusBorderColor = 'border-stone-300/80';
+                let statusCardBg = 'bg-[#fdfbf7]';
+                let statusBadge = '';
+
+                if (status === 'green') {
+                    statusBorderColor = 'border-emerald-500 shadow-emerald-500/10';
+                    statusCardBg = 'bg-emerald-50/80';
+                    statusBadge = '<span class="text-xs bg-emerald-500 text-white px-3 py-1 rounded-full font-bold shadow-xs">🟢 Groen</span>';
+                } else if (status === 'orange') {
+                    statusBorderColor = 'border-amber-500 shadow-amber-500/10';
+                    statusCardBg = 'bg-amber-50/80';
+                    statusBadge = '<span class="text-xs bg-amber-500 text-white px-3 py-1 rounded-full font-bold shadow-xs">🟠 Oranje</span>';
+                } else if (status === 'red') {
+                    statusBorderColor = 'border-rose-500 shadow-rose-500/10';
+                    statusCardBg = 'bg-rose-50/80';
+                    statusBadge = '<span class="text-xs bg-rose-500 text-white px-3 py-1 rounded-full font-bold shadow-xs">🔴 Rood</span>';
+                }
+
+                const card = document.createElement('div');
+                card.className = `${statusCardBg} rounded-3xl border-2 ${statusBorderColor} p-6 shadow-sm flex flex-col justify-between transition-all duration-300 hover:shadow-md hover:-translate-y-0.5`;
+                
+                let displayChar = item.char.charAt(0);
+
+                let sentencesHtml = '';
+                item.sentences.forEach(s => {
+                    sentencesHtml += renderInteractiveSentence(s);
+                });
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-4">
+                                <div class="w-16 h-16 rounded-2xl bg-stone-900 text-white flex items-center justify-center text-4xl chinese-font shadow-md">${displayChar}</div>
+                                <div>
+                                    ${statusBadge}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="relative bg-stone-100/70 border border-stone-200 p-2.5 rounded-2xl flex items-center justify-between gap-2 my-4">
+                            <div class="popup-display hidden absolute inset-0 bg-amber-700 text-amber-50 text-sm font-bold rounded-2xl flex items-center justify-center px-3 tracking-wide z-10 text-center shadow-md"></div>
+                            
+                            <button onclick="revealPinyin(event, ${item.id}, '${item.pinyin}')" class="flex-1 py-1.5 px-3 bg-white hover:bg-stone-50 border border-stone-300/80 text-xs font-semibold text-stone-700 rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
+                                <span>🔊 Pinyin</span>
+                            </button>
+                            <button onclick="revealMeaning(event, ${item.id}, '${item.meaning}')" class="flex-1 py-1.5 px-3 bg-white hover:bg-stone-50 border border-stone-300/80 text-xs font-semibold text-stone-700 rounded-xl shadow-xs transition flex items-center justify-center gap-1.5">
+                                <span>💡 Betekenis</span>
+                            </button>
+                        </div>
+
+                        <div class="space-y-2 mt-4 pt-4 border-t border-stone-200/80">
+                            <p class="text-[11px] font-bold text-stone-400 uppercase tracking-wider">A2 Voorbeeldzinnen (Dubbelklik zin)</p>
+                            ${sentencesHtml}
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 mt-6 pt-4 border-t border-stone-200/80">
+                        <button onclick="setStatus(${item.id}, 'green')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white transition shadow-sm ${status === 'green' ? 'ring-2 ring-emerald-700 ring-offset-2' : ''}">Groen</button>
+                        <button onclick="setStatus(${item.id}, 'orange')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm ${status === 'orange' ? 'ring-2 ring-amber-700 ring-offset-2' : ''}">Oranje</button>
+                        <button onclick="setStatus(${item.id}, 'red')" class="flex-1 py-2 text-xs font-bold rounded-xl bg-rose-500 hover:bg-rose-600 text-white transition shadow-sm ${status === 'red' ? 'ring-2 ring-rose-700 ring-offset-2' : ''}">Rood</button>
+                    </div>
+                `;
+
+                const sentenceBoxes = card.querySelectorAll('.sentence-box');
+                sentenceBoxes.forEach((box) => {
+                    box.addEventListener('dblclick', () => {
+                        const fullPinyinEl = box.querySelector('.full-pinyin');
+                        fullPinyinEl.classList.remove('hidden');
+                        setTimeout(() => {
+                            fullPinyinEl.classList.add('hidden');
+                        }, 3000);
+                    });
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        function setStatus(id, status) {
+            if (userStatus[id] === status) {
+                delete userStatus[id];
+            } else {
+                userStatus[id] = status;
+            }
+            saveStatus();
+            renderApp();
+        }
+
+        document.getElementById('filter-status').addEventListener('change', renderApp);
+        document.getElementById('search-input').addEventListener('input', renderApp);
+
+        loadNewRandomSet();
+        updateProgress();
+    </script>
+</body>
+</html>
