@@ -6,6 +6,8 @@
     <title>Hanzi Basis 500 Trainer (Manhua Editie)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Hanzi Writer CDN voor schrijfanimaties -->
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5.0/dist/hanzi-writer.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -43,7 +45,7 @@
                 <div class="w-10 h-10 rounded-xl bg-manhua-primary text-white flex items-center justify-center font-bold text-xl shadow-md chinese-font">汉</div>
                 <div>
                     <h1 class="text-xl font-bold text-stone-900 tracking-tight">Hanzi Basis 500 Trainer</h1>
-                    <p class="text-xs text-stone-500">Volledige database (500 unieke tekens) • Uitgebreide Lokale Woordenindex</p>
+                    <p class="text-xs text-stone-500">Volledige database (500 unieke tekens) • Met schrijfanimaties</p>
                 </div>
             </div>
             <!-- Voortgang & Filters -->
@@ -89,9 +91,27 @@
         </div>
     </main>
 
+    <!-- Schrijfanimatie Modal / Popup Container -->
+    <div id="writer-modal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-[#fdfbf7] border-2 border-amber-500/80 rounded-3xl p-6 shadow-2xl max-w-sm w-full mx-4 text-center relative">
+            <button onclick="closeWriterModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 font-bold text-lg w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center transition">✕</button>
+            <h3 id="modal-char-title" class="text-lg font-bold text-stone-900 mb-1">Karakter Schrijven</h3>
+            <p class="text-xs text-stone-500 mb-4">Bekijk de schrijfvolgorde stap voor stap</p>
+            
+            <!-- Canvas waar Hanzi Writer op tekent -->
+            <div id="character-target" class="w-48 h-48 mx-auto bg-amber-50/60 border border-amber-200 rounded-2xl shadow-inner flex items-center justify-center mb-4 relative"></div>
+            
+            <div class="flex gap-2 justify-center">
+                <button onclick="animateWriter()" class="px-4 py-2 bg-manhua-primary hover:bg-amber-800 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5">
+                    <span>▶ Speel animatie af</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-[#fdfbf7] border-t border-stone-300/60 py-4 text-center text-xs text-stone-500">
-        Manhua Hanzi Trainer • Dubbelklik zin = volledige zin pinyin • Enkele klik karakter = teken pinyin
+        Manhua Hanzi Trainer • Klik op een teken om de schrijfanimatie te openen
     </footer>
 
     <!-- JavaScript Applicatie Logica -->
@@ -207,14 +227,13 @@
             }
         })();
 
-        // Hulpfunctie om pinyin te ontdoen van spaties en toontekens voor flexibel zoeken
+        // Hulpfunctie om pinyin flexibel te normaliseren
         function normalizePinyin(str) {
             return str.toLowerCase()
-                      .replace(/[\s\-\u0300-\u036f]/g, "") // Verwijder spaties, streepjes en diakritische tekens
-                      .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Vang eventuele accenten op
+                      .replace(/[\s\-\u0300-\u036f]/g, "")
+                      .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // Lokale woordenindex met samengestelde pinyin (zonder spaties voor de zoekindex)
         const compoundWords = [
             { word: "米饭", pinyin: "mǐfàn", searchPinyin: "mifan", translation: "rijst (gekookt)", chars: ["米", "饭"] },
             { word: "面条", pinyin: "miàntiáo", searchPinyin: "miantiao", translation: "pasta, noedels", chars: ["面", "条"] },
@@ -272,6 +291,7 @@
 
         let userStatus = JSON.parse(localStorage.getItem('manhua_hanzi_500_status')) || {};
         let currentSet = [];
+        let activeWriter = null;
 
         function loadNewRandomSet() {
             let shuffled = [...fullDatabase].sort(() => 0.5 - Math.random());
@@ -299,10 +319,50 @@
             return cleanChar; 
         }
 
+        // Hanzi Writer modal openen en animeren
+        function openWriterModal(char) {
+            const modal = document.getElementById('writer-modal');
+            const title = document.getElementById('modal-char-title');
+            const targetContainer = document.getElementById('character-target');
+            
+            title.textContent = `Karakter: ${char}`;
+            targetContainer.innerHTML = ''; // Maak vorig canvas leeg
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+
+            // Instantieer HanziWriter
+            activeWriter = HanziWriter.create('character-target', char, {
+                width: 170,
+                height: 170,
+                padding: 10,
+                showOutline: true,
+                strokeAnimationSpeed: 1,
+                delayBetweenStrokes: 300,
+                strokeColor: '#c2410c', // Manhua primary terracotta rood
+                radicalColor: '#047857'
+            });
+
+            // Speel direct af bij openen
+            activeWriter.animateCharacter();
+        }
+
+        function animateWriter() {
+            if (activeWriter) {
+                activeWriter.animateCharacter();
+            }
+        }
+
+        function closeWriterModal() {
+            const modal = document.getElementById('writer-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
         function renderCompoundCard(comp) {
             let charsHtml = '';
             comp.chars.forEach(c => {
-                charsHtml += `<span class="compound-token relative cursor-pointer px-2.5 py-1 rounded-xl bg-amber-100/70 hover:bg-amber-200 text-amber-950 chinese-font transition" onclick="showCompoundCharPinyin(event, this, '${c}')">${c}</span>`;
+                charsHtml += `<span class="compound-token relative cursor-pointer px-2.5 py-1 rounded-xl bg-amber-100/70 hover:bg-amber-200 text-amber-950 chinese-font transition" onclick="showCompoundCharPinyin(event, this, '${c}')" title="Klik voor pinyin">${c}</span>`;
             });
 
             return `
@@ -324,26 +384,21 @@
         function showCompoundCharPinyin(event, element, char) {
             event.stopPropagation();
             const target = element;
-            
             const existing = target.querySelector('.char-popup');
             if (existing) existing.remove();
 
             let pinyin = getPinyinForChar(char);
-
             const popup = document.createElement('span');
             popup.className = 'char-popup absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-800 text-amber-50 text-[11px] px-2.5 py-1 rounded-lg shadow-xl z-20 whitespace-nowrap font-sans tracking-wide';
             popup.textContent = pinyin;
             target.style.position = 'relative';
             target.appendChild(popup);
 
-            setTimeout(() => {
-                popup.remove();
-            }, 3000);
+            setTimeout(() => popup.remove(), 3000);
         }
 
         function renderInteractiveSentence(sentenceObj) {
             const chars = Array.from(sentenceObj.chinese);
-            
             let html = `<div class="sentence-box relative cursor-pointer select-none p-2.5 rounded-xl hover:bg-stone-200/50 transition border border-transparent hover:border-stone-300/60 group">`;
             
             html += `<div class="flex justify-between items-center gap-2">`;
@@ -352,7 +407,7 @@
                 if (c.trim() === '') {
                     html += `<span class="mx-0.5"></span>`;
                 } else {
-                    html += `<span class="word-token relative px-1 rounded hover:bg-amber-200/60 hover:text-amber-950 transition" data-char="${c}" onclick="showWordPinyin(event, this)">${c}</span>`;
+                    html += `<span class="word-token relative px-1 rounded hover:bg-amber-200/60 hover:text-amber-950 transition" data-char="${c}" onclick="showWordPinyin(event, this)" title="Klik voor pinyin">${c}</span>`;
                 }
             });
             html += `</div>`;
@@ -373,7 +428,6 @@
             
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const originalContent = btn.innerHTML;
-                
                 btn.innerHTML = "✅ <span>Gekopieerd!</span>";
                 btn.classList.add('bg-emerald-200', 'text-emerald-950', 'border', 'border-emerald-400');
                 btn.classList.remove('bg-stone-200/80', 'text-stone-700', 'hover:bg-amber-200');
@@ -383,56 +437,42 @@
                     btn.classList.remove('bg-emerald-200', 'text-emerald-950', 'border', 'border-emerald-400');
                     btn.classList.add('bg-stone-200/80', 'text-stone-700', 'hover:bg-amber-200');
                 }, 2000);
-            }).catch(err => {
-                console.error('Kopiëren mislukt: ', err);
-            });
+            }).catch(err => console.error('Kopiëren mislukt: ', err));
         }
 
         function showWordPinyin(event, element) {
             event.stopPropagation();
             const target = element;
             const char = target.getAttribute('data-char');
-            
             const existing = target.querySelector('.pinyin-popup');
             if (existing) existing.remove();
 
             let pinyin = getPinyinForChar(char);
-
             const popup = document.createElement('span');
             popup.className = 'pinyin-popup absolute -top-8 left-1/2 -translate-x-1/2 bg-amber-700 text-amber-50 text-[11px] px-2.5 py-1 rounded-lg shadow-xl z-20 whitespace-nowrap font-sans tracking-wide';
             popup.textContent = pinyin;
             target.style.position = 'relative';
             target.appendChild(popup);
 
-            setTimeout(() => {
-                popup.remove();
-            }, 3000);
+            setTimeout(() => popup.remove(), 3000);
         }
 
         function revealPinyin(event, id, pinyinText) {
             event.stopPropagation();
             const btn = event.currentTarget;
             const container = btn.parentElement.querySelector('.popup-display');
-            
             container.textContent = pinyinText;
             container.classList.remove('hidden');
-            
-            setTimeout(() => {
-                container.classList.add('hidden');
-            }, 3000);
+            setTimeout(() => container.classList.add('hidden'), 3000);
         }
 
         function revealMeaning(event, id, meaningText) {
             event.stopPropagation();
             const btn = event.currentTarget;
             const container = btn.parentElement.querySelector('.popup-display');
-            
             container.textContent = meaningText;
             container.classList.remove('hidden');
-            
-            setTimeout(() => {
-                container.classList.add('hidden');
-            }, 3000);
+            setTimeout(() => container.classList.add('hidden'), 3000);
         }
 
         function renderApp() {
@@ -448,7 +488,6 @@
             let targetDataset = currentSet;
 
             if (searchQuery.length > 0) {
-                // Zoek zowel op losse karakters, vertaling als op samengestelde pinyinwoorden (zoals mifan, miantiao)
                 matchedCompound = compoundWords.find(c => 
                     c.translation.toLowerCase().includes(searchQuery) || 
                     normalizePinyin(c.word).includes(searchQuery) || 
@@ -499,12 +538,6 @@
                         <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl font-bold">🔍</div>
                         <h3 class="text-base font-bold text-stone-900 mb-1">Geen resultaat gevonden voor "${rawSearchQuery}"</h3>
                         <p class="text-xs text-stone-500 max-w-md mx-auto mb-4">Dit woord of pinyin-patroon staat momenteel niet in onze index.</p>
-                        
-                        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 text-left max-w-lg mx-auto text-xs text-stone-700 space-y-1.5">
-                            <p class="font-bold text-amber-900">💡 Wat kun je doen?</p>
-                            <p>• Probeer een samengesteld woord zonder spaties (bijv. <em>mifan</em>, <em>miantiao</em>, <em>yinhang</em>).</p>
-                            <p>• Zoek op Nederlandse betekenis (bijv. <em>rijst</em>, <em>geld</em>, <em>bank</em>).</p>
-                        </div>
                     </div>
                 `;
                 return;
@@ -545,9 +578,11 @@
                     <div>
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-4">
-                                <div class="w-16 h-16 rounded-2xl bg-stone-900 text-white flex items-center justify-center text-4xl chinese-font shadow-md">${displayChar}</div>
+                                <!-- Klik op het karakter opent direct de schrijfanimatie -->
+                                <div onclick="openWriterModal('${displayChar}')" title="Klik om schrijfvolgorde te zien" class="w-16 h-16 rounded-2xl bg-stone-900 hover:bg-manhua-primary text-white flex items-center justify-center text-4xl chinese-font shadow-md cursor-pointer transition transform hover:scale-105" role="button" aria-label="Schrijfanimatie openen voor ${displayChar}">${displayChar}</div>
                                 <div>
                                     ${statusBadge}
+                                    <p class="text-[11px] text-stone-400 mt-1">Klik teken voor animatie</p>
                                 </div>
                             </div>
                         </div>
@@ -581,9 +616,7 @@
                     box.addEventListener('dblclick', () => {
                         const fullPinyinEl = box.querySelector('.full-pinyin');
                         fullPinyinEl.classList.remove('hidden');
-                        setTimeout(() => {
-                            fullPinyinEl.classList.add('hidden');
-                        }, 3000);
+                        setTimeout(() => fullPinyinEl.classList.add('hidden'), 3000);
                     });
                 });
 
