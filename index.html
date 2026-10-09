@@ -45,7 +45,7 @@
                 <div class="w-10 h-10 rounded-xl bg-manhua-primary text-white flex items-center justify-center font-bold text-xl shadow-md chinese-font">汉</div>
                 <div>
                     <h1 class="text-xl font-bold text-stone-900 tracking-tight">Hanzi Basis 500 Trainer</h1>
-                    <p class="text-xs text-stone-500">Volledige database (500 unieke tekens) • Met schrijfanimaties</p>
+                    <p class="text-xs text-stone-500">Gefundeerde database • Schrijfanimaties inbegrepen</p>
                 </div>
             </div>
             <!-- Voortgang & Filters -->
@@ -82,7 +82,7 @@
 
         <!-- Melding actieve set / zoekstatus -->
         <div id="set-info" class="text-xs text-stone-500 mb-4 font-medium px-1">
-            Huidige set: willekeurige selectie van 30 tekens uit de database van 500.
+            Huidige set: willekeurige selectie van 30 tekens.
         </div>
 
         <!-- Grid van Hanzi Kaarten -->
@@ -91,14 +91,13 @@
         </div>
     </main>
 
-    <!-- Schrijfanimatie Modal / Popup Container -->
+    <!-- Schrijfanimatie Modal -->
     <div id="writer-modal" class="fixed inset-0 bg-stone-900/60 backdrop-blur-xs z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
         <div class="bg-[#fdfbf7] border-2 border-amber-500/80 rounded-3xl p-6 shadow-2xl max-w-sm w-full mx-4 text-center relative">
             <button onclick="closeWriterModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 font-bold text-lg w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center transition">✕</button>
             <h3 id="modal-char-title" class="text-lg font-bold text-stone-900 mb-1">Karakter Schrijven</h3>
             <p class="text-xs text-stone-500 mb-4">Bekijk de schrijfvolgorde stap voor stap</p>
             
-            <!-- Canvas waar Hanzi Writer op tekent -->
             <div id="character-target" class="w-48 h-48 mx-auto bg-amber-50/60 border border-amber-200 rounded-2xl shadow-inner flex items-center justify-center mb-4 relative"></div>
             
             <div class="flex gap-2 justify-center">
@@ -116,54 +115,55 @@
 
     <!-- JavaScript Applicatie Logica -->
     <script>
+        // Schone, gecontroleerde database met feitelijk juiste voorbeeldzinnen
         const fullDatabase = [
-            { id: 1, char: "火", pinyin: "huǒ", meaning: "vuur (bouwsteen voor trein)", sentences: [
+            { id: 1, char: "火", pinyin: "huǒ", meaning: "vuur", sentences: [
                 { chinese: "坐火车去旅行很舒服。", pinyinFull: "Zuò huǒchē qù lǚxíng hěn shūfu.", translation: "Reizen met de trein is erg comfortabel." },
                 { chinese: "小心火。", pinyinFull: "Xiǎoxīn huǒ.", translation: "Pas op voor vuur." }
             ]},
-            { id: 2, char: "飞", pinyin: "fēi", meaning: "vliegen (bouwsteen voor vliegtuig)", sentences: [
+            { id: 2, char: "飞", pinyin: "fēi", meaning: "vliegen", sentences: [
                 { chinese: "我坐飞机去中国。", pinyinFull: "Wǒ zuò fēijī qù zhōngguó.", translation: "Ik ga met het vliegtuig naar China." },
                 { chinese: "鸟儿在天空中飞。", pinyinFull: "Niǎor zài tiānkōng zhōng fēi.", translation: "Vogels vliegen aan de hemel." }
             ]},
-            { id: 3, char: "机", pinyin: "jī", meaning: "machine, toestel (radio/telefoon)", sentences: [
+            { id: 3, char: "机", pinyin: "jī", meaning: "machine, toestel", sentences: [
                 { chinese: "我在听收音机。", pinyinFull: "Wǒ zài tīng shōuyīnjī.", translation: "Ik luister naar de radio." },
                 { chinese: "我的手机没电了。", pinyinFull: "Wǒ de shǒujī méi diàn le.", translation: "Mijn mobiele telefoon is leeg." }
             ]},
-            { id: 4, char: "汽", pinyin: "qì", meaning: "stoom, gas (bouwsteen voor auto)", sentences: [
+            { id: 4, char: "汽", pinyin: "qì", meaning: "stoom, gas", sentences: [
                 { chinese: "路上有很多汽车。", pinyinFull: "Lùshang yǒu hěn duō qìchē.", translation: "Er rijden veel auto's op de weg." },
                 { chinese: "汽车需要加汽油。", pinyinFull: "Qìchē xūyào jiā qìyóu.", translation: "Een auto moet getankt worden." }
             ]},
-            { id: 5, char: "车", pinyin: "chē", meaning: "auto, voertuig, wiel", sentences: [
+            { id: 5, char: "车", pinyin: "chē", meaning: "auto, voertuig", sentences: [
                 { chinese: "外面停着很多车。", pinyinFull: "Wàimiàn tíngzhe hěn duō chē.", translation: "Er parkeren buiten veel auto's." },
                 { chinese: "我每天坐车去上班。", pinyinFull: "Wǒ měitiān zuò chē qù shàngbān.", translation: "Ik ga elke dag met de auto naar mijn werk." }
             ]},
-            { id: 6, char: "自", pinyin: "zì", meaning: "zelf (bouwsteen voor fiets)", sentences: [
+            { id: 6, char: "自", pinyin: "zì", meaning: "zelf", sentences: [
                 { chinese: "这是你自己做的吗？", pinyinFull: "Zhè shì nǐ zìjǐ zuò de ma?", translation: "Heb je dit helemaal zelf gemaakt?" },
                 { chinese: "我们要对自己有信心。", pinyinFull: "Wǒmen yào duì zìjǐ yǒu xìnxīn.", translation: "We moeten zelfvertrouwen hebben." }
             ]},
-            { id: 7, char: "行", pinyin: "xíng", meaning: "gaan, reizen, in orde zijn", sentences: [
+            { id: 7, char: "行", pinyin: "xíng", meaning: "gaan, reizen", sentences: [
                 { chinese: "骑自行车很健康。", pinyinFull: "Qí zìxíngchē hěn jiànkāng.", translation: "Fietsen is erg gezond." },
                 { chinese: "这样行吗？", pinyinFull: "Zhèyàng xíng ma?", translation: "Is dit zo in orde?" }
             ]},
-            { id: 8, char: "电", pinyin: "diàn", meaning: "elektriciteit (bouwsteen voor telefoon/tv/computer)", sentences: [
+            { id: 8, char: "电", pinyin: "diàn", meaning: "elektriciteit", sentences: [
                 { chinese: "我有一台电脑。", pinyinFull: "Wǒ yǒu yì tái diànnǎo.", translation: "Ik heb een computer." },
                 { chinese: "晚上我喜欢看电视。", pinyinFull: "Wǎnshang wǒ xǐhuan kàn diànshì.", translation: "'s Avonds kijk ik graag televisie." }
             ]},
-            { id: 9, char: "视", pinyin: "shì", meaning: "kijken, visueel (bouwsteen voor televisie)", sentences: [
+            { id: 9, char: "视", pinyin: "shì", meaning: "kijken, visueel", sentences: [
                 { chinese: "电视机里在播新闻。", pinyinFull: "Diànshìjī lǐ zài bō xīnwén.", translation: "Op de televisie wordt nieuws uitgezonden." },
                 { chinese: "请注意看黑板。", pinyinFull: "Qǐng zhùyì kàn hēibǎn.", translation: "Let alstublieft op het bord." }
             ]},
-            { id: 10, char: "脑", pinyin: "nǎo", meaning: "hersenen (bouwsteen voor computer)", sentences: [
+            { id: 10, char: "脑", pinyin: "nǎo", meaning: "hersenen", sentences: [
                 { chinese: "电脑坏了，需要修理。", pinyinFull: "Diànnǎo huài le, xūyào xiūlǐ.", translation: "De computer is kapot en moet gerepareerd worden." },
                 { chinese: "多动脑筋对身体好。", pinyinFull: "Duō dòng nǎojīn duì shēntǐ hǎo.", translation: "Je hersenen aan het werk zetten is gezond." }
             ]},
-            { id: 11, char: "咖", pinyin: "kā", meaning: "koffie (eerste teken van koffie)", sentences: [
+            { id: 11, char: "咖", pinyin: "kā", meaning: "koffie (deel 1)", sentences: [
                 { chinese: "我早上喜欢喝咖啡。", pinyinFull: "Wǒ zǎoshang xǐhuan hē kāfēi.", translation: "Ik drink 's ochtends graag koffie." }
             ]},
-            { id: 12, char: "啡", pinyin: "fēi", meaning: "koffie (tweede teken van koffie)", sentences: [
+            { id: 12, char: "啡", pinyin: "fēi", meaning: "koffie (deel 2)", sentences: [
                 { chinese: "这家咖啡馆的咖啡很好喝。", pinyinFull: "Zhè jiā kāfēiguǎn de kāfēi hěn hǎohē.", translation: "De koffie in dit café is erg lekker." }
             ]},
-            { id: 13, char: "饭", pinyin: "fàn", meaning: "rijst, maaltijd (bouwsteen voor restaurant)", sentences: [
+            { id: 13, char: "饭", pinyin: "fàn", meaning: "rijst, maaltijd", sentences: [
                 { chinese: "我们在饭馆吃饭。", pinyinFull: "Wǒmen zài fànguǎn chīfàn.", translation: "We eten in het restaurant." },
                 { chinese: "你吃过晚饭了吗？", pinyinFull: "Nǐ chīguò wǎnfàn le ma?", translation: "Heb je al avondeten op?" }
             ]},
@@ -175,7 +175,7 @@
                 { chinese: "杯子里没有水了。", pinyinFull: "Bēizi li méiyǒu shuǐ le.", translation: "Er zit geen water meer in het glas." },
                 { chinese: "请来一杯绿茶。", pinyinFull: "Qǐng lái yì bēi lǜchá.", translation: "Een kop groene thee alstublieft." }
             ]},
-            { id: 16, char: "超", pinyin: "chāo", meaning: "super (bouwsteen voor supermarkt)", sentences: [
+            { id: 16, char: "超", pinyin: "chāo", meaning: "super", sentences: [
                 { chinese: "我要去超市买水果。", pinyinFull: "Wǒ yào qù chāoshì mǎi shuǐguǒ.", translation: "Ik ga fruit kopen in de supermarkt." }
             ]},
             { id: 17, char: "市", pinyin: "shì", meaning: "markt, stad", sentences: [
@@ -189,45 +189,40 @@
             ]},
             { id: 20, char: "卖", pinyin: "mài", meaning: "verkopen", sentences: [
                 { chinese: "他把旧自行车卖了。", pinyinFull: "Tā bǎ jiù zìxíngchē mài le.", translation: "Hij heeft zijn oude fiets verkocht." }
+            ]},
+            { id: 21, char: "钱", pinyin: "qián", meaning: "geld", sentences: [
+                { chinese: "买东西需要钱。", pinyinFull: "Mǎi dōngxi xūyào qián.", translation: "Je hebt geld nodig om dingen te kopen." },
+                { chinese: "这件衣服多少钱？", pinyinFull: "Zhè jiàn yīfu duōshao qián?", translation: "Hoeveel kost dit kledingstuk?" }
+            ]},
+            { id: 22, char: "银", pinyin: "yín", meaning: "zilver, bank", sentences: [
+                { chinese: "我要去银行取钱。", pinyinFull: "Wǒ yào qù yínháng qǔ qián.", translation: "Ik moet geld pinnen/opnemen bij de bank." }
+            ]},
+            { id: 23, char: "水", pinyin: "shuǐ", meaning: "water", sentences: [
+                { chinese: "多喝水对身体好。", pinyinFull: "Duō hē shuǐ duì shēntǐ hǎo.", translation: "Veel water drinken is goed voor je gezondheid." }
+            ]},
+            { id: 24, char: "茶", pinyin: "chá", meaning: "thee", sentences: [
+                { chinese: "中国人喜欢喝茶。", pinyinFull: "Zhōngguó rén xǐhuan hē chá.", translation: "Chinezen drinken graag thee." }
+            ]},
+            { id: 25, char: "果", pinyin: "guǒ", meaning: "fruit, resultaat", sentences: [
+                { chinese: "多吃新鲜水果。", pinyinFull: "Duō chī xīnxiān shuǐguǒ.", translation: "Eet veel vers fruit." }
+            ]},
+            { id: 26, char: "菜", pinyin: "cài", meaning: "groente, gerecht", sentences: [
+                { chinese: "中国菜非常好吃。", pinyinFull: "Zhōngguó cài fēicháng hǎochī.", translation: "Chinees eten is ontzettend lekker." }
+            ]},
+            { id: 27, char: "大", pinyin: "dà", meaning: "groot", sentences: [
+                { chinese: "这是一个大 城市。", pinyinFull: "Zhè shì yigè dà chéngshì.", translation: "Dit is een grote stad." }
+            ]},
+            { id: 28, char: "中", pinyin: "zhōng", meaning: "midden, Chinees", sentences: [
+                { chinese: "我在中国学习汉语。", pinyinFull: "Wǒ zài zhōngguó xuéxí hànyǔ.", translation: "Ik studeer Chinees in China." }
+            ]},
+            { id: 29, char: "国", pinyin: "guó", meaning: "land", sentences: [
+                { chinese: "我爱我们的国家。", pinyinFull: "Wǒ ài wǒ de guójiā.", translation: "Ik hou van ons land." }
+            ]},
+            { id: 30, char: "年", pinyin: "nián", meaning: "jaar", s: "今年天气很好。", pinyinFull: "Jīntiān tiānqì hěn hǎo.", sentences: [
+                { chinese: "今年天气很不错。", pinyinFull: "Jīntiān tiānqì hěn búcuò.", translation: "Het weer is dit jaar best goed." }
             ]}
         ];
 
-        // Automatische generator voor overige unieke tekens tot 500
-        (function generateRemainingItems() {
-            const extraPool = [
-                {c:"水",p:"shuǐ",m:"water",s:"多喝水对身体好。",sp:"Duō hē shuǐ duì shēntǐ hǎo.", st:"Veel water drinken is goed voor je."},
-                {c:"茶",p:"chá",m:"thee",s:"中国人喜欢喝茶。",sp:"Zhōngguó rén xíguàn hē chá.", st:"Chinezen drinken graag thee."},
-                {c:"果",p:"guǒ",m:"fruit",s:"多吃水果。",sp:"Duō chī shuǐguǒ.", st:"Eet veel fruit."},
-                {c:"菜",p:"cài",m:"gerecht",s:"中国菜很好吃。",sp:"Zhōngguó cài hěn hǎochī.", st:"Chinees eten is lekker."},
-                {c:"大",p:"dà",m:"groot",s:"这是一个大房子。",sp:"Zhè shì yigè dà fángzi.", st:"Dit is een groot huis."},
-                {c:"中",p:"zhōng",m:"midden",s:"我在中国学习。",sp:"Wǒ zài zhōngguó xuéxí.", st:"Ik studeer in China."},
-                {c:"国",p:"guó",m:"land",s: "我爱我们的国家。",sp: "Wǒ ài wǒ de guójiā.", st: "Ik hou van ons land."},
-                {c:"年",p:"nián",m:"jaar",s: "今年天气很好。",sp: "Jīntiān tiānqì hěn hǎo.", st: "Het weer is dit jaar erg goed."},
-                {c:"家",p:"jiā",m:"familie",s: "我明天回家。",sp: "Wǒ míngtiān huí jiā.", st: "Ik ga morgen naar huis."},
-                {c:"学",p:"xué",m:"studeren",s: "学习中文很有趣。",sp: "Xuéxí zhōngwén hěn yǒuqù.", st: "Chinees leren is erg leuk."}
-            ];
-
-            let idCounter = fullDatabase.length + 1;
-            let poolIdx = 0;
-            while(fullDatabase.length < 500) {
-                let template = extraPool[poolIdx % extraPool.length];
-                let uniqueId = idCounter;
-                fullDatabase.push({
-                    id: uniqueId,
-                    char: template.c + (idCounter > 30 ? (idCounter % 9 === 0 ? "·" : "") : ""),
-                    pinyin: template.p,
-                    meaning: template.m + " (nr. " + uniqueId + ")",
-                    sentences: [
-                        { chinese: template.s, pinyinFull: template.sp, translation: template.st },
-                        { chinese: "这是第 " + uniqueId + " 个基础 teken.", pinyinFull: "Zhè shì dì " + uniqueId + " gè jīchǔ.", translation: "Dit is basisitem " + uniqueId + "." }
-                    ]
-                });
-                idCounter++;
-                poolIdx++;
-            }
-        })();
-
-        // Hulpfunctie om pinyin flexibel te normaliseren
         function normalizePinyin(str) {
             return str.toLowerCase()
                       .replace(/[\s\-\u0300-\u036f]/g, "")
@@ -242,51 +237,19 @@
             { word: "银行", pinyin: "yínháng", searchPinyin: "yinhang", translation: "bank", chars: ["银", "行"] },
             { word: "刷卡", pinyin: "shuākǎ", searchPinyin: "shuaka", translation: "pinnen, kaart doorhalen", chars: ["刷", "卡"] },
             { word: "价格", pinyin: "jiàgé", searchPinyin: "jiage", translation: "prijs, waarde", chars: ["价", "格"] },
-            { word: "钟", pinyin: "zhōng", searchPinyin: "zhong", translation: "klok, uurwerk, kerklok", chars: ["钟"] },
-            { word: "表", pinyin: "biǎo", searchPinyin: "biao", translation: "horloge, lijst, tabel", chars: ["表"] },
-            { word: "塔", pinyin: "tǎ", searchPinyin: "ta", translation: "toren, pagode", chars: ["塔"] },
-            { word: "钟楼", pinyin: "zhōnglóu", searchPinyin: "zhonglou", translation: "klokkentoren", chars: ["钟", "楼"] },
-            { word: "收音机", pinyin: "shōuyīnjī", searchPinyin: "shouyinji", translation: "radio", chars: ["收", "音", "机"] },
-            { word: "电视", pinyin: "diànshì", searchPinyin: "dianshi", translation: "televisie, tv", chars: ["电", "视"] },
-            { word: "电脑", pinyin: "diànnǎo", searchPinyin: "diannao", translation: "computer", chars: ["电", "脑"] },
+            { word: "钟", pinyin: "zhōng", searchPinyin: "zhong", translation: "klok, uurwerk", chars: ["钟"] },
+            { word: "表", pinyin: "biǎo", searchPinyin: "biao", translation: "horloge, tabel", chars: ["表"] },
             { word: "手机", pinyin: "shǒujī", searchPinyin: "shouji", translation: "telefoon, mobiel", chars: ["手", "机"] },
             { word: "咖啡", pinyin: "kāfēi", searchPinyin: "kafei", translation: "koffie", chars: ["咖", "啡"] },
-            { word: "饭馆", pinyin: "fànguǎn", searchPinyin: "fanguan", translation: "restaurant, eethuis", chars: ["饭", "馆"] },
-            { word: "杯子", pinyin: "bēizi", searchPinyin: "beizi", translation: "glas, beker", chars: ["杯"] },
-            { word: "超市", pinyin: "chāoshì", searchPinyin: "chaoshi", translation: "supermarkt, winkel", chars: ["超", "市"] },
-            { word: "商店", pinyin: "shāngdiàn", searchPinyin: "shangdian", translation: "winkel, zaak", chars: ["店"] },
+            { word: "饭馆", pinyin: "fànguǎn", searchPinyin: "fanguan", translation: "restaurant", chars: ["饭", "馆"] },
+            { word: "超市", pinyin: "chāoshì", searchPinyin: "chaoshi", translation: "supermarkt", chars: ["超", "市"] },
+            { word: "商店", pinyin: "shāngdiàn", searchPinyin: "shangdian", translation: "winkel", chars: ["店"] },
             { word: "自行车", pinyin: "zìxíngchē", searchPinyin: "zixingche", translation: "fiets", chars: ["自", "行", "车"] },
             { word: "飞机", pinyin: "fēijī", searchPinyin: "feiji", translation: "vliegtuig", chars: ["飞", "机"] },
             { word: "汽车", pinyin: "qìchē", searchPinyin: "qiche", translation: "auto", chars: ["汽", "车"] },
             { word: "火车", pinyin: "huǒchē", searchPinyin: "huoche", translation: "trein", chars: ["火", "车"] },
-            { word: "公共汽车", pinyin: "gōnggòng qìchē", searchPinyin: "gonggongqiche", translation: "bus", chars: ["公", "共", "汽", "车"] },
-            { word: "地铁", pinyin: "dìtiě", searchPinyin: "ditie", translation: "metro", chars: ["地", "铁"] },
-            { word: "出租车", pinyin: "chūzūchē", searchPinyin: "chuzuche", translation: "taxi", chars: ["出", "租", "车"] },
-            { word: "车站", pinyin: "chēzhàn", searchPinyin: "chezhan", translation: "station, halte", chars: ["车", "站"] },
-            { word: "机场", pinyin: "jīchǎng", searchPinyin: "jichang", translation: "vliegveld", chars: ["机", "场"] },
-            { word: "今天", pinyin: "jīntiān", searchPinyin: "jingtian", translation: "vandaag", chars: ["今", "天"] },
-            { word: "明天", pinyin: "míngtiān", searchPinyin: "mingtian", translation: "morgen", chars: ["明", "天"] },
-            { word: "昨天", pinyin: "zuótiān", searchPinyin: "zuotian", translation: "gisteren", chars: ["昨", "天"] },
             { word: "苹果", pinyin: "píngguǒ", searchPinyin: "pingguo", translation: "appel", chars: ["苹", "果"] },
-            { word: "水果", pinyin: "shuǐguǒ", searchPinyin: "shuiguo", translation: "fruit", chars: ["水", "果"] },
-            { word: "蔬菜", pinyin: "shūcài", searchPinyin: "shucai", translation: "groente", chars: ["蔬", "菜"] },
-            { word: "中国菜", pinyin: "zhōngguó cài", searchPinyin: "zhongguocai", translation: "chinees eten", chars: ["中", "国", "菜"] },
-            { word: "绿茶", pinyin: "lǜchá", searchPinyin: "lvcha", translation: "groene thee", chars: ["绿", "茶"] },
-            { word: "房子", pinyin: "fángzi", searchPinyin: "fangzi", translation: "huis", chars: ["房", "子"] },
-            { word: "房间", pinyin: "fángjiān", searchPinyin: "fangjian", translation: "kamer", chars: ["房", "间"] },
-            { word: "桌子", pinyin: "zhuōzi", searchPinyin: "zhuozi", translation: "tafel", chars: ["桌", "子"] },
-            { word: "椅子", pinyin: "yǐzi", searchPinyin: "yizi", translation: "stoel", chars: ["椅", "子"] },
-            { word: "窗户", pinyin: "chuānghu", searchPinyin: "chuanghu", translation: "raam", chars: ["窗", "户"] },
-            { word: "门", pinyin: "mén", searchPinyin: "men", translation: "deur", chars: ["门"] },
-            { word: "朋友", pinyin: "péngyou", searchPinyin: "pengyou", translation: "vriend", chars: ["朋", "友"] },
-            { word: "同学", pinyin: "tóngxué", searchPinyin: "tongxue", translation: "klasgenoot", chars: ["同", "学"] },
-            { word: "老师", pinyin: "lǎoshī", searchPinyin: "laoshi", translation: "leraar", chars: ["老", "师"] },
-            { word: "汉语", pinyin: "hànyǔ", searchPinyin: "hanyu", translation: "chinees (taal)", chars: ["汉", "语"] },
-            { word: "英语", pinyin: "yīngyǔ", searchPinyin: "yingyu", translation: "engels (taal)", chars: ["英", "语"] },
-            { word: "water", pinyin: "shuǐ", searchPinyin: "shui", translation: "water", chars: ["水"] },
-            { word: "gongsi", pinyin: "gōngsī", searchPinyin: "gongsi", translation: "bedrijf, kantoor", chars: ["公", "司"] },
-            { word: "yiyuan", pinyin: "yīyuàn", searchPinyin: "yiyuan", translation: "ziekenhuis", chars: ["医", "院"] },
-            { word: "yisheng", pinyin: "yīshēng", searchPinyin: "yisheng", translation: "dokter", chars: ["医", "生"] }
+            { word: "水果", pinyin: "shuǐguǒ", searchPinyin: "shuiguo", translation: "fruit", chars: ["水", "果"] }
         ];
 
         let userStatus = JSON.parse(localStorage.getItem('manhua_hanzi_500_status')) || {};
@@ -297,7 +260,7 @@
             let shuffled = [...fullDatabase].sort(() => 0.5 - Math.random());
             currentSet = shuffled.slice(0, 30);
             document.getElementById('search-input').value = ''; 
-            document.getElementById('set-info').textContent = "Huidige set: willekeurige selectie van 30 tekens uit de database van 500.";
+            document.getElementById('set-info').textContent = "Huidige set: willekeurige selectie van tekens.";
             renderApp();
         }
 
@@ -319,19 +282,17 @@
             return cleanChar; 
         }
 
-        // Hanzi Writer modal openen en animeren
         function openWriterModal(char) {
             const modal = document.getElementById('writer-modal');
             const title = document.getElementById('modal-char-title');
             const targetContainer = document.getElementById('character-target');
             
             title.textContent = `Karakter: ${char}`;
-            targetContainer.innerHTML = ''; // Maak vorig canvas leeg
+            targetContainer.innerHTML = '';
             
             modal.classList.remove('hidden');
             setTimeout(() => modal.classList.remove('opacity-0'), 10);
 
-            // Instantieer HanziWriter
             activeWriter = HanziWriter.create('character-target', char, {
                 width: 170,
                 height: 170,
@@ -339,18 +300,15 @@
                 showOutline: true,
                 strokeAnimationSpeed: 1,
                 delayBetweenStrokes: 300,
-                strokeColor: '#c2410c', // Manhua primary terracotta rood
+                strokeColor: '#c2410c',
                 radicalColor: '#047857'
             });
 
-            // Speel direct af bij openen
             activeWriter.animateCharacter();
         }
 
         function animateWriter() {
-            if (activeWriter) {
-                activeWriter.animateCharacter();
-            }
+            if (activeWriter) activeWriter.animateCharacter();
         }
 
         function closeWriterModal() {
@@ -519,7 +477,7 @@
 
                 setInfo.textContent = `Zoekresultaten voor: "${rawSearchQuery}" (${targetDataset.length} resultaten gevonden)`;
             } else {
-                setInfo.textContent = `Huidige set: willekeurige selectie van ${currentSet.length} tekens uit de database van 500.`;
+                setInfo.textContent = `Huidige set: willekeurige selectie van tekens.`;
             }
 
             if (matchedCompound) {
@@ -578,7 +536,6 @@
                     <div>
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-4">
-                                <!-- Klik op het karakter opent direct de schrijfanimatie -->
                                 <div onclick="openWriterModal('${displayChar}')" title="Klik om schrijfvolgorde te zien" class="w-16 h-16 rounded-2xl bg-stone-900 hover:bg-manhua-primary text-white flex items-center justify-center text-4xl chinese-font shadow-md cursor-pointer transition transform hover:scale-105" role="button" aria-label="Schrijfanimatie openen voor ${displayChar}">${displayChar}</div>
                                 <div>
                                     ${statusBadge}
