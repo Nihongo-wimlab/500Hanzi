@@ -45,7 +45,7 @@
                 <div class="w-10 h-10 rounded-xl bg-manhua-primary text-white flex items-center justify-center font-bold text-xl shadow-md chinese-font">汉</div>
                 <div>
                     <h1 class="text-xl font-bold text-stone-900 tracking-tight">Hanzi Basis 500 Trainer</h1>
-                    <p class="text-xs text-stone-500">Gefundeerde database • Schrijfanimaties inbegrepen</p>
+                    <p class="text-xs text-stone-500">Lokale spraak & schrijfanimaties inbegrepen</p>
                 </div>
             </div>
             <!-- Voortgang & Filters -->
@@ -82,7 +82,7 @@
 
         <!-- Melding actieve set / zoekstatus -->
         <div id="set-info" class="text-xs text-stone-500 mb-4 font-medium px-1">
-            Huidige set: willekeurige selectie van 30 tekens.
+            Huidige set: willekeurige selectie van tekens.
         </div>
 
         <!-- Grid van Hanzi Kaarten -->
@@ -110,12 +110,11 @@
 
     <!-- Footer -->
     <footer class="bg-[#fdfbf7] border-t border-stone-300/60 py-4 text-center text-xs text-stone-500">
-        Manhua Hanzi Trainer • Klik op een teken om de schrijfanimatie te openen
+        Manhua Hanzi Trainer • Klik op een teken voor schrijfanimatie of 🔊 voor lokale spraak
     </footer>
 
     <!-- JavaScript Applicatie Logica -->
     <script>
-        // Schone, gecontroleerde database met feitelijk juiste voorbeeldzinnen
         const fullDatabase = [
             { id: 1, char: "火", pinyin: "huǒ", meaning: "vuur", sentences: [
                 { chinese: "坐火车去旅行很舒服。", pinyinFull: "Zuò huǒchē qù lǚxíng hěn shūfu.", translation: "Reizen met de trein is erg comfortabel." },
@@ -201,7 +200,7 @@
                 { chinese: "多喝水对身体好。", pinyinFull: "Duō hē shuǐ duì shēntǐ hǎo.", translation: "Veel water drinken is goed voor je gezondheid." }
             ]},
             { id: 24, char: "茶", pinyin: "chá", meaning: "thee", sentences: [
-                { chinese: "中国人喜欢喝茶。", pinyinFull: "Zhōngguó rén xǐhuan hē chá.", translation: "Chinezen drinken graag thee." }
+                { chinese: "中国人喜欢喝茶。", pinyinFull: "Zhōngguó rén xíguàn hē chá.", translation: "Chinezen drinken graag thee." }
             ]},
             { id: 25, char: "果", pinyin: "guǒ", meaning: "fruit, resultaat", sentences: [
                 { chinese: "多吃新鲜水果。", pinyinFull: "Duō chī xīnxiān shuǐguǒ.", translation: "Eet veel vers fruit." }
@@ -210,7 +209,7 @@
                 { chinese: "中国菜非常好吃。", pinyinFull: "Zhōngguó cài fēicháng hǎochī.", translation: "Chinees eten is ontzettend lekker." }
             ]},
             { id: 27, char: "大", pinyin: "dà", meaning: "groot", sentences: [
-                { chinese: "这是一个大 城市。", pinyinFull: "Zhè shì yigè dà chéngshì.", translation: "Dit is een grote stad." }
+                { chinese: "这是一个大城市。", pinyinFull: "Zhè shì yigè dà chéngshì.", translation: "Dit is een grote stad." }
             ]},
             { id: 28, char: "中", pinyin: "zhōng", meaning: "midden, Chinees", sentences: [
                 { chinese: "我在中国学习汉语。", pinyinFull: "Wǒ zài zhōngguó xuéxí hànyǔ.", translation: "Ik studeer Chinees in China." }
@@ -218,7 +217,7 @@
             { id: 29, char: "国", pinyin: "guó", meaning: "land", sentences: [
                 { chinese: "我爱我们的国家。", pinyinFull: "Wǒ ài wǒ de guójiā.", translation: "Ik hou van ons land." }
             ]},
-            { id: 30, char: "年", pinyin: "nián", meaning: "jaar", s: "今年天气很好。", pinyinFull: "Jīntiān tiānqì hěn hǎo.", sentences: [
+            { id: 30, char: "年", pinyin: "nián", meaning: "jaar", sentences: [
                 { chinese: "今年天气很不错。", pinyinFull: "Jīntiān tiānqì hěn búcuò.", translation: "Het weer is dit jaar best goed." }
             ]}
         ];
@@ -255,6 +254,34 @@
         let userStatus = JSON.parse(localStorage.getItem('manhua_hanzi_500_status')) || {};
         let currentSet = [];
         let activeWriter = null;
+
+        // Lokale spraakfunctie via browser Web Speech API
+        function speakChinese(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop eventueel lopende spraak
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'zh-CN'; // Mandarijn Chinees
+                utterance.rate = 0.85;   // Iets langzamer voor leerders
+
+                // Zoek naar een heldere lokale Chinese stem indien beschikbaar
+                const voices = window.speechSynthesis.getVoices();
+                const cnVoice = voices.find(v => v.lang === 'zh-CN' || v.lang.includes('zh'));
+                if (cnVoice) {
+                    utterance.voice = cnVoice;
+                }
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                alert('Spraak synthesie wordt helaas niet ondersteund door deze browser.');
+            }
+        }
+
+        // Zorg dat stemmen geladen zijn op mobile/desktop
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                window.speechSynthesis.getVoices();
+            };
+        }
 
         function loadNewRandomSet() {
             let shuffled = [...fullDatabase].sort(() => 0.5 - Math.random());
@@ -370,7 +397,12 @@
             });
             html += `</div>`;
 
-            html += `<button onclick="copyFullSentence(event, '${sentenceObj.chinese}', '${sentenceObj.pinyinFull}', '${sentenceObj.translation}')" title="Kopieer zin inclusief pinyin en vertaling" class="copy-btn px-2.5 py-1 bg-stone-200/80 hover:bg-amber-200 text-stone-700 rounded-lg text-xs font-medium transition flex items-center gap-1 shadow-xs whitespace-nowrap">📋 <span>Kopieer</span></button>`;
+            // Knoppen rechts: Spreken + Kopiëren
+            html += `<div class="flex items-center gap-1.5 whitespace-nowrap">`;
+            html += `<button onclick="event.stopPropagation(); speakChinese('${sentenceObj.chinese}')" title="Luister naar Chinese uitspraak" class="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-xs font-medium transition flex items-center gap-1 shadow-xs">🔊 <span>Hoor</span></button>`;
+            html += `<button onclick="copyFullSentence(event, '${sentenceObj.chinese}', '${sentenceObj.pinyinFull}', '${sentenceObj.translation}')" title="Kopieer zin inclusief pinyin en vertaling" class="copy-btn px-2.5 py-1 bg-stone-200/80 hover:bg-amber-200 text-stone-700 rounded-lg text-xs font-medium transition flex items-center gap-1 shadow-xs">📋 <span>Kopieer</span></button>`;
+            html += `</div>`;
+
             html += `</div>`;
 
             html += `<div class="full-pinyin text-xs text-manhua-primary font-semibold mt-1.5 hidden bg-amber-100/70 px-2 py-1 rounded-lg border border-amber-300/60">${sentenceObj.pinyinFull}</div>`;
